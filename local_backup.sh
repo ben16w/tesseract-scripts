@@ -11,8 +11,6 @@ BACKUP_RETENTION_MONTHLY="{{ local_backups_monthly }}"
 LOG_FILE="{{ log_file }}"
 EMAIL_USERNAME="{{ email_username }}"
 
-{% raw %}
-
 # Set global variables
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 if [ -f "$SCRIPT_DIR"/.env ]; then
@@ -52,7 +50,7 @@ fi
 
 # Check that a path argument has been given.
 if [ -z "$1" ]; then
-        error_exit "No path arguments supplied."
+    error_exit "No path arguments supplied."
 fi
 
 # Check backup destination
@@ -163,5 +161,3 @@ for backup_path in "$@"; do
     log "Local backup of path $backup_path completed"
 
 done
-
-{% endraw %}

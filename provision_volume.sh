@@ -39,7 +39,7 @@ function log()
 # Function to print the script usage message.
 function usage()
 {
-    echo "Usage: $(basename "$0") [-s size] [-p password] [-d] VOLUME_FILE"
+    echo "Usage: $(basename "$0") [-s <SIZE>] [-p <PASSWORD>] [-d] <VOLUME_FILE>"
     echo "Create an encrypted volume with specified size and password, and add sample data if specified."
     echo ""
     echo "  -s size        Set the size of the volume, default is 4G."
@@ -99,7 +99,7 @@ while getopts "s:p:d" flag; do
 done
 
 # Get the volume file path from the remaining command line arguments.
-VOLUME_FILE=${@:$OPTIND:1}
+VOLUME_FILE=${*: $OPTIND:1}
 
 # Check if the volume file already exists
 if [ -f "$VOLUME_FILE" ]; then
@@ -119,8 +119,7 @@ if [ ${#FILENAME} -lt 2 ]; then
 fi
 
 # Create a temporary directory.
-TMP_DIR=$(mktemp -d)
-if [ $? -ne 0 ]; then
+if ! TMP_DIR=$(mktemp -d); then
     log "Failed to create temporary directory"
 fi
 
@@ -161,7 +160,7 @@ if [ "$VOLUME_ADD_DATA" != "false" ]; then
     # Loop through each directory in SAMPLE_DIRS and create sample files in each directory.
     for dir in "${SAMPLE_DIRS[@]}"; do
         mkdir "$TMP_DIR/$dir"
-        for i in {1..$SAMPLE_FILES_NUM}; do
+        for (( i=1; i<=SAMPLE_FILES_NUM; i++ )); do
         # Create a sample file filled with random data
         dd if=/dev/urandom bs=1M count=8 of="$TMP_DIR/$dir/samplefile-$i"
         

@@ -6,8 +6,6 @@ LOG_LEVEL="{{ cloud_backup_log_level }}"
 LOG_FILE="{{ log_file }}"
 EMAIL_USERNAME="{{ email_username }}"
 
-{% raw %}
-
 # Set global variables
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 if [ -f "$SCRIPT_DIR"/.env ]; then
@@ -73,5 +71,3 @@ for backup_dir in "$@"; do
 done
 
 log "Cloud backup of path $backup_dir finished!"
-
-{% endraw %}

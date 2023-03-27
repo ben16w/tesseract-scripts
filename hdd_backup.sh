@@ -120,27 +120,28 @@ trap cleanup SIGINT SIGTERM SIGHUP EXIT
 
 log "Unlocking HDD"
 
-# Unlock
-cryptsetup luksOpen "/dev/disk/by-uuid/$HDD_UUID" "luks-$HDD_UUID"
-if [ $? -ne 0 ]; then
+# Unlock the LUKS-encrypted hard drive
+if ! cryptsetup luksOpen "/dev/disk/by-uuid/$HDD_UUID" "luks-$HDD_UUID"; then
     error_exit "Unlock error"
 fi
 
-# Mount
-mount "/dev/mapper/luks-$HDD_UUID" "$TMP_DIR"
-if [ $? -ne 0 ]; then
+# Mount the unlocked hard drive to the temporary directory
+if ! mount "/dev/mapper/luks-$HDD_UUID" "$TMP_DIR"; then
     error_exit "Mount error"
 fi
 
-rsync \
--artvu \
---del \
---prune-empty-dirs \
-$EXCLUDE_PARAMS \
-"$STORAGE_PATH" \
-"$TMP_DIR"
-if [ $? -ne 0 ]; then
+# Use rsync to copy files from the source directory to the temporary directory
+if ! rsync \
+-artvu \                   # Preserve file attributes, recurse into subdirectories, show progress, update files
+--del \                    # Delete files from destination that do not exist in source
+--prune-empty-dirs \       # Remove empty directories from destination
+$EXCLUDE_PARAMS \          # Exclude specific files or directories from the sync
+"$STORAGE_PATH" \          # Source directory
+"$TMP_DIR"                 # Destination directory
+then
     error_exit "Rsync command failed."
 fi
+
+
 
 log "Backup finished"
