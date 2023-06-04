@@ -5,6 +5,7 @@ LOG_DIR="{{ cloud_backup_log_dir }}"
 LOG_LEVEL="{{ cloud_backup_log_level }}"
 LOG_FILE="{{ log_file }}"
 EMAIL_USERNAME="{{ email_username }}"
+VERIFY_PERCENT=0.3
 
 # Set global variables
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -66,6 +67,12 @@ for backup_dir in "$@"; do
     response=$?
     if [ $response -ne 0 ]; then
         error_exit "Kopia command failed."
+    fi
+
+    kopia snapshot verify --verify-files-percent="$VERIFY_PERCENT" --file-parallelism=10 --parallel=10
+    response=$?
+    if [ $response -ne 0 ]; then
+        error_exit "Kopia verify command failed."
     fi
 
 done
