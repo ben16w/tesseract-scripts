@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 ## Configuration
-LOG_DIR="{{ cloud_backup_log_dir }}"
-LOG_LEVEL="{{ cloud_backup_log_level }}"
-LOG_FILE="{{ log_file }}"
-EMAIL_USERNAME="{{ email_username }}"
-VERIFY_PERCENT=0.3
+LOG_DIR="/var/log/kopia/"
+LOG_LEVEL="debug"
+LOG_FILE="/var/log/tesseract.log"
+EMAIL_USERNAME=""
+VERIFY_PERCENT="0.3"
 
 # Set global variables
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -17,6 +17,8 @@ function error_exit()
 {
     echo "$(date '+%F %T.%3N') ERROR: ${1:-"Unknown Error"}" | tee -a "$LOG_FILE"
 
+    if [ "${EMAIL_USERNAME}" != "" ]; then
+
 msmtp -t <<EOF
 To: ${EMAIL_USERNAME}
 From: ${EMAIL_USERNAME}
@@ -26,6 +28,10 @@ Hostname: $(hostname)
 Logs:
 $(tail -n 10 "$LOG_FILE")
 EOF
+
+    else
+        log "No email sent. EMAIL_USERNAME not set."
+    fi
     exit
 }
 

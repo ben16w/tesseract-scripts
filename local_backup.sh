@@ -4,12 +4,12 @@
 # Fix bug in the do_backup find commands
 
 ## Configuration
-BACKUP_DESTINATION="{{ local_backup_destination }}"
-BACKUP_RETENTION_DAILY="{{ local_backups_daily }}"
-BACKUP_RETENTION_WEEKLY="{{ local_backups_weekly }}"
-BACKUP_RETENTION_MONTHLY="{{ local_backups_monthly }}"
-LOG_FILE="{{ log_file }}"
-EMAIL_USERNAME="{{ email_username }}"
+BACKUP_DESTINATION="."
+BACKUP_RETENTION_DAILY="3"
+BACKUP_RETENTION_WEEKLY="2"
+BACKUP_RETENTION_MONTHLY="1"
+LOG_FILE="/var/log/tesseract.log"
+EMAIL_USERNAME=""
 
 # Set global variables
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -21,6 +21,8 @@ function error_exit()
 {
     echo "$(date '+%F %T.%3N') ERROR: ${1:-"Unknown Error"}" | tee -a "$LOG_FILE"
 
+    if [ "${EMAIL_USERNAME}" != "" ]; then
+
 msmtp -t <<EOF
 To: ${EMAIL_USERNAME}
 From: ${EMAIL_USERNAME}
@@ -30,6 +32,10 @@ Hostname: $(hostname)
 Logs:
 $(tail -n 10 "$LOG_FILE")
 EOF
+
+    else
+        log "No email sent. EMAIL_USERNAME not set."
+    fi
     exit
 }
 
