@@ -4,10 +4,10 @@
 # Fix bug in the do_backup find commands
 
 ## Configuration
-BACKUP_DESTINATION="."
-BACKUP_RETENTION_DAILY="3"
-BACKUP_RETENTION_WEEKLY="2"
-BACKUP_RETENTION_MONTHLY="1"
+LOCAL_BACKUP_DESTINATION="."
+LOCAL_BACKUP_DAILY="3"
+LOCAL_BACKUP_WEEKLY="2"
+LOCAL_BACKUP_MONTHLY="1"
 LOG_FILE="/var/log/tesseract.log"
 EMAIL_USERNAME=""
 
@@ -60,8 +60,8 @@ if [ -z "$1" ]; then
 fi
 
 # Check backup destination
-if [ ! -d "$BACKUP_DESTINATION" ]; then
-    error_exit "No backup destination $BACKUP_DESTINATION."
+if [ ! -d "$LOCAL_BACKUP_DESTINATION" ]; then
+    error_exit "No backup destination $LOCAL_BACKUP_DESTINATION."
 fi
 
 for backup_path in "$@"; do
@@ -116,7 +116,7 @@ for backup_path in "$@"; do
 
     function do_backup
     {
-        cd "$BACKUP_DESTINATION/" || error_exit
+        cd "$LOCAL_BACKUP_DESTINATION/" || error_exit
         filename="$backup_name-backup-$DATE.tar.gz"
         if [ -f "$filename" ]; then
             log "Backup $filename has already been made for today."
@@ -146,21 +146,21 @@ for backup_path in "$@"; do
         fi
 
         find ./ -type f -name "$backup_name-backup-daily*.tar.gz" -printf '%T@ %p\n' | sort -k1 -nr | sed 's/.* //g' \
-            | sed -e 1,"$BACKUP_RETENTION_DAILY"d | xargs -d '\n' rm -R > /dev/null 2>&1
+            | sed -e 1,"$LOCAL_BACKUP_DAILY"d | xargs -d '\n' rm -R > /dev/null 2>&1
         find ./ -type f -name "$backup_name-backup-weekly*.tar.gz" -printf '%T@ %p\n' | sort -k1 -nr | sed 's/.* //g' \
-            | sed -e 1,"$BACKUP_RETENTION_WEEKLY"d | xargs -d '\n' rm -R > /dev/null 2>&1
+            | sed -e 1,"$LOCAL_BACKUP_WEEKLY"d | xargs -d '\n' rm -R > /dev/null 2>&1
         find ./ -type f -name "$backup_name-backup-monthly*.tar.gz" -printf '%T@ %p\n' | sort -k1 -nr | sed 's/.* //g' \
-            | sed -e 1,"$BACKUP_RETENTION_MONTHLY"d | xargs -d '\n' rm -R > /dev/null 2>&1
+            | sed -e 1,"$LOCAL_BACKUP_MONTHLY"d | xargs -d '\n' rm -R > /dev/null 2>&1
 
     }
 
-    if [[ ( -n "$BACKUP_RETENTION_DAILY" ) && ( $BACKUP_RETENTION_DAILY -ne 0 ) && ( $FN == daily ) ]]; then
+    if [[ ( -n "$LOCAL_BACKUP_DAILY" ) && ( $LOCAL_BACKUP_DAILY -ne 0 ) && ( $FN == daily ) ]]; then
         do_backup
     fi
-    if [[ ( -n "$BACKUP_RETENTION_WEEKLY" ) && ( $BACKUP_RETENTION_WEEKLY -ne 0 ) && ( $FN == weekly ) ]]; then
+    if [[ ( -n "$LOCAL_BACKUP_WEEKLY" ) && ( $LOCAL_BACKUP_WEEKLY -ne 0 ) && ( $FN == weekly ) ]]; then
         do_backup
     fi
-    if [[ ( -n "$BACKUP_RETENTION_MONTHLY" ) && ( $BACKUP_RETENTION_MONTHLY -ne 0 ) && ( $FN == monthly ) ]]; then
+    if [[ ( -n "$LOCAL_BACKUP_MONTHLY" ) && ( $LOCAL_BACKUP_MONTHLY -ne 0 ) && ( $FN == monthly ) ]]; then
         do_backup
     fi
 

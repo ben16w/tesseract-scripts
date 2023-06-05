@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
 ## Configuration
-LOG_DIR="/var/log/kopia/"
-LOG_LEVEL="debug"
+CLOUD_BACKUP_LOG_DIR="/var/log/kopia/"
+CLOUD_BACKUP_LOG_LEVEL="debug"
+CLOUD_BACKUP_VERIFY_PERCENT="0.3"
 LOG_FILE="/var/log/tesseract.log"
 EMAIL_USERNAME=""
-VERIFY_PERCENT="0.3"
+
 
 # Set global variables
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -69,13 +70,13 @@ for backup_dir in "$@"; do
     fi
 
     # Everything goes to file. Maybe should be 2> | tee -a file
-    kopia snapshot create "$backup_dir" --file-log-level="$LOG_LEVEL" --log-dir="$LOG_DIR"
+    kopia snapshot create "$backup_dir" --file-log-level="$CLOUD_BACKUP_LOG_LEVEL" --log-dir="$CLOUD_BACKUP_LOG_DIR"
     response=$?
     if [ $response -ne 0 ]; then
         error_exit "Kopia command failed."
     fi
 
-    kopia snapshot verify --verify-files-percent="$VERIFY_PERCENT" --file-parallelism=10 --parallel=10
+    kopia snapshot verify --verify-files-percent="$CLOUD_BACKUP_VERIFY_PERCENT" --file-parallelism=10 --parallel=10
     response=$?
     if [ $response -ne 0 ]; then
         error_exit "Kopia verify command failed."
