@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 ## Configuration
-CLOUD_BACKUP_LOG_DIR="/var/log/kopia/"
-CLOUD_BACKUP_LOG_LEVEL="debug"
-CLOUD_BACKUP_VERIFY_PERCENT="0.3"
+KOPIA_BACKUP_LOG_DIR="/var/log/kopia/"
+KOPIA_BACKUP_LOG_LEVEL="debug"
+KOPIA_BACKUP_VERIFY_PERCENT="0.3"
 LOG_FILE="/var/log/tesseract.log"
 EMAIL_USERNAME=""
 
@@ -70,13 +70,13 @@ for backup_dir in "$@"; do
     fi
 
     # Everything goes to file. Maybe should be 2> | tee -a file
-    kopia snapshot create "$backup_dir" --file-log-level="$CLOUD_BACKUP_LOG_LEVEL" --log-dir="$CLOUD_BACKUP_LOG_DIR"
+    kopia snapshot create "$backup_dir" --file-log-level="$KOPIA_BACKUP_LOG_LEVEL" --log-dir="$KOPIA_BACKUP_LOG_DIR"
     response=$?
     if [ $response -ne 0 ]; then
         error_exit "Kopia command failed."
     fi
 
-    kopia snapshot verify --verify-files-percent="$CLOUD_BACKUP_VERIFY_PERCENT" --file-parallelism=10 --parallel=10
+    kopia snapshot verify --verify-files-percent="$KOPIA_BACKUP_VERIFY_PERCENT" --file-parallelism=10 --parallel=10
     response=$?
     if [ $response -ne 0 ]; then
         error_exit "Kopia verify command failed."
