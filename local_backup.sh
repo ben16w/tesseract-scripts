@@ -3,23 +3,37 @@
 # TODO
 # Fix bug in the do_backup find commands
 
-## Configuration
+####  CONFIGURATION  ####
+
 LOCAL_BACKUP_DESTINATION="."
 LOCAL_BACKUP_DAILY="3"
 LOCAL_BACKUP_WEEKLY="2"
 LOCAL_BACKUP_MONTHLY="1"
-LOG_FILE="/var/log/tesseract.log"
+
+function usage()
+{
+    echo "Usage: $0 [-h|--help] <BACKUP_PATH> [<BACKUP_PATH2> ...]"
+    echo "Description: Performs local backups of the specified paths."
+    echo "Arguments:"
+    echo "  <BACKUP_PATH>    The path(s) to be backed up. Multiple paths can be provided."
+    echo "Options:"
+    echo "  -h, --help       Display this help message and exit."
+    echo
+    exit 0
+}
+
+
+####  COMMON CODE  ####
+
+LOG_FILE=""
 EMAIL_USERNAME=""
-
-# Set global variables
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-if [ -f "$SCRIPT_DIR"/.env ]; then
-    source "$SCRIPT_DIR"/.env || exit 1
-fi
 
+# Function to exit the script with an error message.
 function error_exit()
 {
-    echo "$(date '+%F %T.%3N') ERROR: ${1:-"Unknown Error"}" | tee -a "$LOG_FILE"
+    echo "ERROR: ${1:-"Unknown Error"}"
+    log "ERROR: ${1:-"Unknown Error"}"
 
     if [ "${EMAIL_USERNAME}" != "" ]; then
 
@@ -34,25 +48,42 @@ $(tail -n 10 "$LOG_FILE")
 EOF
 
     else
-        log "No email sent. EMAIL_USERNAME not set."
+        info "No email sent. EMAIL_USERNAME not set."
     fi
-    exit
+    exit 1
+}
+
+# Function to print an informational message.
+function info()
+{
+    echo "INFO: ${1}"
+    log "INFO: ${1}"
 }
 
 function log()
 {
-    echo "$(date '+%F %T.%3N') INFO: ${1}" | tee -a "$LOG_FILE"
+    if [ "${LOG_FILE}" != "" ]; then
+        echo "$(date '+%F %T.%3N') ${1}" >> "$LOG_FILE"
+    fi
 }
 
+# Source environment variables from the .env file if it exists
+if [ -f "$SCRIPT_DIR"/.env ]; then
+    source "$SCRIPT_DIR"/.env || exit 1
+fi
+
+# Check if script is running as root
 if [[ $EUID -ne 0 ]]; then
     error_exit "Script $0 must be run as root" 
 fi
 
-# PUT SCRIPT INFO IN HERE
-if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
-    echo "Local backup"
-    exit 0
+# Display usage information if -h or --help option is provided
+if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
+    usage
 fi
+
+
+####  MAIN CODE  ####
 
 # Check that a path argument has been given.
 if [ -z "$1" ]; then
@@ -66,7 +97,7 @@ fi
 
 for backup_path in "$@"; do
 
-    log "Local backup of path $backup_path starting."
+    info "Local backup of path $backup_path starting."
 
     backup_name=$(basename "$backup_path")
 
@@ -86,16 +117,16 @@ for backup_path in "$@"; do
     # Check if Docker exists and get list of running containers
     docker_found=0
     if command -v docker &> /dev/null; then
-        log "Docker found of system. Getting list of running containers"
+        info "Docker found of system. Getting list of running containers"
         mapfile -t running_containers < <(docker ps -q)
         if [ ${#running_containers[@]} -ne 0 ]; then
             docker_found=1
         else
-            log "No containers running"
+            info "No containers running"
             docker_found=0
         fi
     else
-        log "Docker not found on system."
+        info "Docker not found on system."
     fi
 
     MONTH=$(date +%d)
@@ -119,26 +150,26 @@ for backup_path in "$@"; do
         cd "$LOCAL_BACKUP_DESTINATION/" || error_exit
         filename="$backup_name-backup-$DATE.tar.gz"
         if [ -f "$filename" ]; then
-            log "Backup $filename has already been made for today."
+            info "Backup $filename has already been made for today."
             return
         fi
 
         if [[ docker_found -eq 1 ]]; then
-            log "Stopping Docker containers."
+            info "Stopping Docker containers."
             docker stop "${running_containers[@]}" &>> "$LOG_FILE"
             if [ $? -ne 0 ]; then
                 error_exit "Docker stop command failed."
             fi
         fi
 
-        log "Creating archive from path."
+        info "Creating archive from path."
         tar --warning=no-file-changed -p -zcf "$filename" "$backup_path" &>> "$LOG_FILE"
         if [ $? -ne 0 ]; then
             error_exit "Tar command failed."
         fi
 
         if [[ docker_found -eq 1 ]]; then
-            log "Starting Docker containers."
+            info "Starting Docker containers."
             docker start "${running_containers[@]}" &>> "$LOG_FILE"
             if [ $? -ne 0 ]; then
                 error_exit "Docker start command failed."
@@ -164,6 +195,6 @@ for backup_path in "$@"; do
         do_backup
     fi
 
-    log "Local backup of path $backup_path completed"
+    info "Local backup of path $backup_path completed"
 
 done
