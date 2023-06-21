@@ -11,7 +11,7 @@ function usage()
 {
     echo "Usage: $0 [-h|--help] <BACKUP_PATH> [<BACKUP_PATH2> ...]"
     echo "Description: Performs a simple incremental backup solution using rsync"
-    echo "and hard links the specified paths."
+    echo "and hard links the specified paths with a maximum number of backups."
     echo "Arguments:"
     echo "  <BACKUP_PATH>    The path(s) to be backed up. Multiple paths can be provided."
     echo "Options:"
