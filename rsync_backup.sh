@@ -1,19 +1,16 @@
 #!/usr/bin/env bash
 
-# TODO
-# Fix bug in the do_backup find commands
-
 ####  CONFIGURATION  ####
 
-LOCAL_BACKUP_DESTINATION="."
-LOCAL_BACKUP_DAILY="3"
-LOCAL_BACKUP_WEEKLY="2"
-LOCAL_BACKUP_MONTHLY="1"
+RSYNC_DESTINATION="."
+RSYNC_NUMBER_OF_BACKUPS="10"
+RSYNC_BACKUP_PATHS="$@"
 
 function usage()
 {
     echo "Usage: $0 [-h|--help] <BACKUP_PATH> [<BACKUP_PATH2> ...]"
-    echo "Description: Performs local backups of the specified paths."
+    echo "Description: Performs a simple incremental backup solution using rsync"
+    echo "and hard links the specified paths."
     echo "Arguments:"
     echo "  <BACKUP_PATH>    The path(s) to be backed up. Multiple paths can be provided."
     echo "Options:"
@@ -91,13 +88,18 @@ if [ -z "$1" ]; then
 fi
 
 # Check backup destination
-if [ ! -d "$LOCAL_BACKUP_DESTINATION" ]; then
-    error_exit "No backup destination $LOCAL_BACKUP_DESTINATION."
+if [ ! -d "$RSYNC_DESTINATION" ]; then
+    error_exit "No backup destination $RSYNC_DESTINATION."
 fi
 
-for backup_path in "$@"; do
+# Check if rsync is installed
+if ! command -v rsync &> /dev/null; then
+    error_exit "rsync could not be found on system."
+fi
 
-    info "Local backup of path $backup_path starting."
+for backup_path in "$RSYNC_BACKUP_PATHS"; do
+
+    info "Rsync backup of path $backup_path starting."
 
     backup_name=$(basename "$backup_path")
 
@@ -109,7 +111,7 @@ for backup_path in "$@"; do
         error_exit "No backup path $backup_path."
     fi
 
-    # Check that local backup path has files in it
+    # Check that backup path has files in it
     if [ ! "$(ls -A "$backup_path")" ]; then
         error_exit "Local backup path $backup_path empty."
     fi
@@ -129,29 +131,15 @@ for backup_path in "$@"; do
         info "Docker not found on system."
     fi
 
-    MONTH=$(date +%d)
-    DAYWEEK=$(date +%u)
-
-    if [[ ${MONTH#0} -eq 1  ]];
-            then
-            FN='monthly'
-    elif [[ ${DAYWEEK#0} -eq 7  ]];
-            then
-            FN='weekly'
-    elif [[ ${DAYWEEK#0} -lt 7 ]];
-            then
-            FN='daily'
-    fi
-
-    DATE=$FN-$(date +"%Y%m%d")
-
     function do_backup
     {
-        cd "$LOCAL_BACKUP_DESTINATION/" || error_exit
-        filename="$backup_name-backup-$DATE.tar.gz"
-        if [ -f "$filename" ]; then
-            info "Backup $filename has already been made for today."
-            return
+        cd "$RSYNC_DESTINATION/" || error_exit
+        latest_backup_dir=$(ls -td -- */ | head -n 1)
+        backup_dest_dir="$backup_name-backup-$DATE"
+
+        # Check if backup directory already exists
+        if [ -d "$backup_dest_dir" ]; then
+            error_exit "Backup destination directory $backup_dest_dir already exists."
         fi
 
         if [[ docker_found -eq 1 ]]; then
@@ -162,10 +150,11 @@ for backup_path in "$@"; do
             fi
         fi
 
-        info "Creating archive from path."
-        tar --warning=no-file-changed -p -zcf "$filename" "$backup_path" &>> "$LOG_FILE"
+        # rsync command using hard links to create incremental backups
+        info "Performing rsync backup of $backup_path to $backup_dest_dir"
+        rsync -av --delete --link-dest="$latest_backup_dir" "$backup_path" "$backup_dest_dir" &>> "$LOG_FILE"
         if [ $? -ne 0 ]; then
-            error_exit "Tar command failed."
+            error_exit "rsync command failed."
         fi
 
         if [[ docker_found -eq 1 ]]; then
@@ -176,25 +165,22 @@ for backup_path in "$@"; do
             fi
         fi
 
-        find ./ -type f -name "$backup_name-backup-daily*.tar.gz" -printf '%T@ %p\n' | sort -k1 -nr | sed 's/.* //g' \
-            | sed -e 1,"$LOCAL_BACKUP_DAILY"d | xargs -d '\n' rm -R > /dev/null 2>&1
-        find ./ -type f -name "$backup_name-backup-weekly*.tar.gz" -printf '%T@ %p\n' | sort -k1 -nr | sed 's/.* //g' \
-            | sed -e 1,"$LOCAL_BACKUP_WEEKLY"d | xargs -d '\n' rm -R > /dev/null 2>&1
-        find ./ -type f -name "$backup_name-backup-monthly*.tar.gz" -printf '%T@ %p\n' | sort -k1 -nr | sed 's/.* //g' \
-            | sed -e 1,"$LOCAL_BACKUP_MONTHLY"d | xargs -d '\n' rm -R > /dev/null 2>&1
-
     }
 
-    if [[ ( -n "$LOCAL_BACKUP_DAILY" ) && ( $LOCAL_BACKUP_DAILY -ne 0 ) && ( $FN == daily ) ]]; then
-        do_backup
+    # Delete old backups if number of backups exceeds RSYNC_NUMBER_OF_BACKUPS
+    cd "$RSYNC_DESTINATION/" || error_exit
+    backup_dirs=($(ls -td -- */ | grep "$backup_name-backup-"))
+    if [ ${#backup_dirs[@]} -gt "$RSYNC_NUMBER_OF_BACKUPS" ]; then
+        info "Number of backups exceeds $RSYNC_NUMBER_OF_BACKUPS. Deleting old backups."
+        for ((i=${#backup_dirs[@]}-1; i>=RSYNC_NUMBER_OF_BACKUPS; i--)); do
+            info "Deleting backup ${backup_dirs[i]}"
+            rm -rf "${backup_dirs[i]}" &>> "$LOG_FILE"
+            if [ $? -ne 0 ]; then
+                error_exit "Failed to delete backup ${backup_dirs[i]}."
+            fi
+        done
     fi
-    if [[ ( -n "$LOCAL_BACKUP_WEEKLY" ) && ( $LOCAL_BACKUP_WEEKLY -ne 0 ) && ( $FN == weekly ) ]]; then
-        do_backup
-    fi
-    if [[ ( -n "$LOCAL_BACKUP_MONTHLY" ) && ( $LOCAL_BACKUP_MONTHLY -ne 0 ) && ( $FN == monthly ) ]]; then
-        do_backup
-    fi
-
-    info "Local backup of path $backup_path completed"
+    
+    info "Rsync backup of path $backup_path completed"
 
 done
