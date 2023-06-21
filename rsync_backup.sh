@@ -113,7 +113,7 @@ for backup_path in "$RSYNC_BACKUP_PATHS"; do
 
     # Check that backup path has files in it
     if [ ! "$(ls -A "$backup_path")" ]; then
-        error_exit "Local backup path $backup_path empty."
+        error_exit "Backup path $backup_path empty."
     fi
 
     # Check if Docker exists and get list of running containers
@@ -131,41 +131,39 @@ for backup_path in "$RSYNC_BACKUP_PATHS"; do
         info "Docker not found on system."
     fi
 
-    function do_backup
-    {
-        cd "$RSYNC_DESTINATION/" || error_exit
-        latest_backup_dir=$(ls -td -- */ | head -n 1)
-        backup_dest_dir="$backup_name-backup-$DATE"
+    cd "$RSYNC_DESTINATION/" || error_exit
+    # latest backup directory with $backup_name-backup- prefix
+    latest_backup_dir=$(ls -td -- "$backup_name-backup-"* | head -n 1)
 
-        # Check if backup directory already exists
-        if [ -d "$backup_dest_dir" ]; then
-            error_exit "Backup destination directory $backup_dest_dir already exists."
-        fi
+    backup_dest_dir="$backup_name-backup-$DATE"
 
-        if [[ docker_found -eq 1 ]]; then
-            info "Stopping Docker containers."
-            docker stop "${running_containers[@]}" &>> "$LOG_FILE"
-            if [ $? -ne 0 ]; then
-                error_exit "Docker stop command failed."
-            fi
-        fi
+    # Check if backup directory already exists
+    if [ -d "$backup_dest_dir" ]; then
+        error_exit "Backup destination directory $backup_dest_dir already exists."
+    fi
 
-        # rsync command using hard links to create incremental backups
-        info "Performing rsync backup of $backup_path to $backup_dest_dir"
-        rsync -av --delete --link-dest="$latest_backup_dir" "$backup_path" "$backup_dest_dir" &>> "$LOG_FILE"
+    if [[ docker_found -eq 1 ]]; then
+        info "Stopping Docker containers."
+        docker stop "${running_containers[@]}" &>> "$LOG_FILE"
         if [ $? -ne 0 ]; then
-            error_exit "rsync command failed."
+            error_exit "Docker stop command failed."
         fi
+    fi
 
-        if [[ docker_found -eq 1 ]]; then
-            info "Starting Docker containers."
-            docker start "${running_containers[@]}" &>> "$LOG_FILE"
-            if [ $? -ne 0 ]; then
-                error_exit "Docker start command failed."
-            fi
+    # rsync command using hard links to create incremental backups
+    info "Performing rsync backup of $backup_path to $backup_dest_dir"
+    rsync -av --delete --link-dest="$latest_backup_dir" "$backup_path" "$backup_dest_dir" &>> "$LOG_FILE"
+    if [ $? -ne 0 ]; then
+        error_exit "rsync command failed."
+    fi
+
+    if [[ docker_found -eq 1 ]]; then
+        info "Starting Docker containers."
+        docker start "${running_containers[@]}" &>> "$LOG_FILE"
+        if [ $? -ne 0 ]; then
+            error_exit "Docker start command failed."
         fi
-
-    }
+    fi
 
     # Delete old backups if number of backups exceeds RSYNC_NUMBER_OF_BACKUPS
     cd "$RSYNC_DESTINATION/" || error_exit
