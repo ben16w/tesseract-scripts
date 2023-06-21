@@ -5,7 +5,7 @@
 RSYNC_DESTINATION="."
 RSYNC_NUMBER_OF_BACKUPS="10"
 RSYNC_BACKUP_PATHS="$@"
-DATE=$FN-$(date +"%Y%m%d")
+DATE=$(date +"%Y%m%d")
 
 function usage()
 {
