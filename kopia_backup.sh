@@ -6,6 +6,7 @@
 KOPIA_BACKUP_LOG_DIR="/var/log/kopia/"
 KOPIA_BACKUP_LOG_LEVEL="debug"
 KOPIA_BACKUP_VERIFY_PERCENT="0.3"
+KOPIA_BACKUP_PARALLELISM="10"
 
 function usage()
 {
@@ -100,13 +101,20 @@ for backup_dir in "$@"; do
     fi
 
     # Everything goes to file. Maybe should be 2> | tee -a file
-    kopia snapshot create "$backup_dir" --file-log-level="$KOPIA_BACKUP_LOG_LEVEL" --log-dir="$KOPIA_BACKUP_LOG_DIR"
+    kopia snapshot create \
+        "$backup_dir" \
+        --file-log-level="$KOPIA_BACKUP_LOG_LEVEL" \
+        --log-dir="$KOPIA_BACKUP_LOG_DIR" \
+        --parallel="$KOPIA_BACKUP_PARALLELISM"
     response=$?
     if [ $response -ne 0 ]; then
         error_exit "Kopia command failed."
     fi
 
-    kopia snapshot verify --verify-files-percent="$KOPIA_BACKUP_VERIFY_PERCENT" --file-parallelism=10 --parallel=10
+    kopia snapshot verify \
+        --verify-files-percent="$KOPIA_BACKUP_VERIFY_PERCENT" \
+        --parallel="$KOPIA_BACKUP_PARALLELISM" \
+        --file-parallelism="$KOPIA_BACKUP_PARALLELISM"
     response=$?
     if [ $response -ne 0 ]; then
         error_exit "Kopia verify command failed."
