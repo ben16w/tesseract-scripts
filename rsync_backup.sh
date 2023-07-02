@@ -2,8 +2,8 @@
 
 ####  CONFIGURATION  ####
 
-RSYNC_DESTINATION="."
-RSYNC_NUMBER_OF_BACKUPS="10"
+RSYNC_BACKUP_DESTINATION="."
+RSYNC_BACKUP_MAX_BACKUPS="10"
 RSYNC_BACKUP_PATHS="$@"
 DATE=$(date +"%Y%m%d")
 
@@ -89,8 +89,8 @@ if [ -z "$1" ]; then
 fi
 
 # Check backup destination
-if [ ! -d "$RSYNC_DESTINATION" ]; then
-    error_exit "No backup destination $RSYNC_DESTINATION."
+if [ ! -d "$RSYNC_BACKUP_DESTINATION" ]; then
+    error_exit "No backup destination $RSYNC_BACKUP_DESTINATION."
 fi
 
 # Check if rsync is installed
@@ -132,7 +132,7 @@ for backup_path in "$RSYNC_BACKUP_PATHS"; do
         info "Docker not found on system."
     fi
 
-    cd "$RSYNC_DESTINATION/" || error_exit
+    cd "$RSYNC_BACKUP_DESTINATION/" || error_exit
     # latest backup directory with $backup_name-backup- prefix
     latest_backup_dir=$(ls -td -- "$backup_name-backup-"* | head -n 1)
 
@@ -166,12 +166,12 @@ for backup_path in "$RSYNC_BACKUP_PATHS"; do
         fi
     fi
 
-    # Delete old backups if number of backups exceeds RSYNC_NUMBER_OF_BACKUPS
-    cd "$RSYNC_DESTINATION/" || error_exit
+    # Delete old backups if number of backups exceeds RSYNC_BACKUP_MAX_BACKUPS
+    cd "$RSYNC_BACKUP_DESTINATION/" || error_exit
     backup_dirs=($(ls -td -- */ | grep "$backup_name-backup-"))
-    if [ ${#backup_dirs[@]} -gt "$RSYNC_NUMBER_OF_BACKUPS" ]; then
-        info "Number of backups exceeds $RSYNC_NUMBER_OF_BACKUPS. Deleting old backups."
-        for ((i=${#backup_dirs[@]}-1; i>=RSYNC_NUMBER_OF_BACKUPS; i--)); do
+    if [ ${#backup_dirs[@]} -gt "$RSYNC_BACKUP_MAX_BACKUPS" ]; then
+        info "Number of backups exceeds $RSYNC_BACKUP_MAX_BACKUPS. Deleting old backups."
+        for ((i=${#backup_dirs[@]}-1; i>=RSYNC_BACKUP_MAX_BACKUPS; i--)); do
             info "Deleting backup ${backup_dirs[i]}"
             rm -rf "${backup_dirs[i]}" &>> "$LOG_FILE"
             if [ $? -ne 0 ]; then
