@@ -108,7 +108,7 @@ function cleanup()
 }
 
 # Build rsync exclude parameters string from array
-EXCLUDE_PARAMS=""
+EXCLUDE_PARAMS=" "
 for dir in "${HDD_BACKUP_EXCLUDE_DIRS[@]}"; do
     EXCLUDE_PARAMS+="--exclude=\"$dir\" "
 done
