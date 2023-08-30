@@ -111,15 +111,17 @@ for backup_dir in "$@"; do
         error_exit "Kopia command failed."
     fi
 
-    kopia snapshot verify \
-        --verify-files-percent="$KOPIA_BACKUP_VERIFY_PERCENT" \
-        --parallel="$KOPIA_BACKUP_PARALLELISM" \
-        --file-parallelism="$KOPIA_BACKUP_PARALLELISM"
-    response=$?
-    if [ $response -ne 0 ]; then
-        error_exit "Kopia verify command failed."
-    fi
-
 done
+
+info "Starting verification of kopia repository"
+
+kopia snapshot verify \
+    --verify-files-percent="$KOPIA_BACKUP_VERIFY_PERCENT" \
+    --parallel="$KOPIA_BACKUP_PARALLELISM" \
+    --file-parallelism="$KOPIA_BACKUP_PARALLELISM"
+response=$?
+if [ $response -ne 0 ]; then
+    error_exit "Kopia verify command failed."
+fi
 
 info "Cloud backup of path $backup_dir finished!"
