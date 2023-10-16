@@ -6,7 +6,7 @@
 ####  CONFIGURATION  ####
 
 LOCAL_BACKUP_DESTINATION="."
-KOPIA_BACKUP_KEEP_DAILY="3"
+LOCAL_BACKUP_KEEP_DAILY="3"
 LOCAL_BACKUP_KEEP_WEEKLY="2"
 LOCAL_BACKUP_KEEP_MONTHLY="1"
 
@@ -177,7 +177,7 @@ for backup_path in "$@"; do
         fi
 
         find ./ -type f -name "$backup_name-backup-daily*.tar.gz" -printf '%T@ %p\n' | sort -k1 -nr | sed 's/.* //g' \
-            | sed -e 1,"$KOPIA_BACKUP_KEEP_DAILY"d | xargs -d '\n' rm -R > /dev/null 2>&1
+            | sed -e 1,"$LOCAL_BACKUP_KEEP_DAILY"d | xargs -d '\n' rm -R > /dev/null 2>&1
         find ./ -type f -name "$backup_name-backup-weekly*.tar.gz" -printf '%T@ %p\n' | sort -k1 -nr | sed 's/.* //g' \
             | sed -e 1,"$LOCAL_BACKUP_KEEP_WEEKLY"d | xargs -d '\n' rm -R > /dev/null 2>&1
         find ./ -type f -name "$backup_name-backup-monthly*.tar.gz" -printf '%T@ %p\n' | sort -k1 -nr | sed 's/.* //g' \
@@ -185,7 +185,7 @@ for backup_path in "$@"; do
 
     }
 
-    if [[ ( -n "$KOPIA_BACKUP_KEEP_DAILY" ) && ( $KOPIA_BACKUP_KEEP_DAILY -ne 0 ) && ( $FN == daily ) ]]; then
+    if [[ ( -n "$LOCAL_BACKUP_KEEP_DAILY" ) && ( $LOCAL_BACKUP_KEEP_DAILY -ne 0 ) && ( $FN == daily ) ]]; then
         do_backup
     fi
     if [[ ( -n "$LOCAL_BACKUP_KEEP_WEEKLY" ) && ( $LOCAL_BACKUP_KEEP_WEEKLY -ne 0 ) && ( $FN == weekly ) ]]; then
