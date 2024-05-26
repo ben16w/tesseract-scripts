@@ -2,8 +2,8 @@
 
 ####  CONFIGURATION  ####
 
-RSYNC_BACKUP_DESTINATION="."
-RSYNC_BACKUP_SOURCE="$1"
+MIRROR_BACKUP_DESTINATION="."
+MIRROR_BACKUP_SOURCE="$1"
 
 function usage()
 {
@@ -87,8 +87,8 @@ if [ -z "$1" ]; then
 fi
 
 # Check backup destination
-if [ ! -d "$RSYNC_BACKUP_DESTINATION" ]; then
-    error_exit "No backup destination $RSYNC_BACKUP_DESTINATION."
+if [ ! -d "$MIRROR_BACKUP_DESTINATION" ]; then
+    error_exit "No backup destination $MIRROR_BACKUP_DESTINATION."
 fi
 
 # Check if rsync is installed
@@ -99,24 +99,24 @@ fi
 # Check if another instance of script is running
 pidof -o %PPID -x "$0" >/dev/null && error_exit "Script $0 already running"
 
-info "Rsync backup of path $RSYNC_BACKUP_SOURCE starting."
+info "Mirror backup of path $MIRROR_BACKUP_SOURCE starting."
 
-# if RSYNC_BACKUP_SOURCE does not end with a slash, add it
-if [[ ! "$RSYNC_BACKUP_SOURCE" =~ /$ ]]; then
-    RSYNC_BACKUP_SOURCE="$RSYNC_BACKUP_SOURCE/"
+# if MIRROR_BACKUP_SOURCE does not end with a slash, add it
+if [[ ! "$MIRROR_BACKUP_SOURCE" =~ /$ ]]; then
+    MIRROR_BACKUP_SOURCE="$MIRROR_BACKUP_SOURCE/"
 fi
 
-backup_dest_dir_name="$(basename "$RSYNC_BACKUP_SOURCE")-backup"
-backup_dest_dir="$RSYNC_BACKUP_DESTINATION/$backup_dest_dir_name"
+backup_dest_dir_name="$(basename "$MIRROR_BACKUP_SOURCE")-backup"
+backup_dest_dir="$MIRROR_BACKUP_DESTINATION/$backup_dest_dir_name"
 
 # Check backup path exists.
-if [ ! -d "$RSYNC_BACKUP_SOURCE" ]; then
-    error_exit "No backup path $RSYNC_BACKUP_SOURCE."
+if [ ! -d "$MIRROR_BACKUP_SOURCE" ]; then
+    error_exit "No backup path $MIRROR_BACKUP_SOURCE."
 fi
 
 # Check that backup path has files in it
-if [ ! "$(ls -A "$RSYNC_BACKUP_SOURCE")" ]; then
-    error_exit "Backup path $RSYNC_BACKUP_SOURCE empty."
+if [ ! "$(ls -A "$MIRROR_BACKUP_SOURCE")" ]; then
+    error_exit "Backup path $MIRROR_BACKUP_SOURCE empty."
 fi
 
 # Check if Docker exists and get list of running containers
@@ -149,8 +149,8 @@ if [[ docker_found -eq 1 ]]; then
 fi
 
 # Run rsync backup
-info "Performing rsync backup of $RSYNC_BACKUP_SOURCE to $backup_dest_dir"
-rsync -av --delete "$RSYNC_BACKUP_SOURCE" "$backup_dest_dir" &>> "$LOG_FILE"
+info "Performing mirror backup of $MIRROR_BACKUP_SOURCE to $backup_dest_dir"
+rsync -av --delete "$MIRROR_BACKUP_SOURCE" "$backup_dest_dir" &>> "$LOG_FILE"
 if [ $? -ne 0 ]; then
     error_exit "rsync command failed."
 fi
@@ -163,4 +163,4 @@ if [[ docker_found -eq 1 ]]; then
     fi
 fi
 
-info "Rsync backup of path $RSYNC_BACKUP_SOURCE completed"
+info "Mirror backup of path $MIRROR_BACKUP_SOURCE completed"
