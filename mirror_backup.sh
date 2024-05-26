@@ -64,6 +64,7 @@ function log()
 
 # Source environment variables from the .env file if it exists
 if [ -f "$SCRIPT_DIR"/.env ]; then
+    echo "Sourcing environment variables from $SCRIPT_DIR/.env"
     source "$SCRIPT_DIR"/.env || exit 1
 fi
 
@@ -147,7 +148,6 @@ if [[ docker_found -eq 1 ]]; then
     fi
 fi
 
-echo "$RSYNC_BACKUP_SOURCE"
 # Run rsync backup
 info "Performing rsync backup of $RSYNC_BACKUP_SOURCE to $backup_dest_dir"
 rsync -av --delete "$RSYNC_BACKUP_SOURCE" "$backup_dest_dir" &>> "$LOG_FILE"
