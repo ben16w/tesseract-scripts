@@ -98,7 +98,7 @@ if ! command -v rsync &> /dev/null; then
     error_exit "rsync could not be found on system."
 fi
 
-for backup_path in "$RSYNC_BACKUP_PATHS"; do
+for backup_path in $RSYNC_BACKUP_PATHS; do
 
     info "Rsync backup of path $backup_path starting."
 
