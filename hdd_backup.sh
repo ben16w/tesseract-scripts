@@ -10,6 +10,8 @@ HDD_BACKUP_EXCLUDE_DIRS=(
     "Downloads"
     "Import"
     "Tvshows"
+    "Audio"
+    "Music"
 )
 
 function usage()
@@ -26,7 +28,6 @@ function usage()
     echo "  This script backs up files from a source directory to an encrypted external hard drive."
     echo "  The HDD_UUID argument is required and should be the UUID of the external hard drive."
     echo
-    exit 0
 }
 
 
@@ -87,6 +88,7 @@ fi
 # Display usage information if -h or --help option is provided
 if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
     usage
+    exit 0
 fi
 
 
@@ -170,13 +172,23 @@ if ! mount "/dev/mapper/luks-$HDD_BACKUP_HDD_UUID" "$HDD_BACKUP_TMP_DIR"; then
 fi
 
 # Use rsync to copy files from the source directory to the temporary directory
+# -a: Preserve file attributes (timestamps, permissions, etc.)
+# -r: Recurse into subdirectories
+# -t: Preserve modification times
+# -v: Increase verbosity (show detailed output)
+# -u: Update files (skip files that are newer on the destination)
+# --del: Delete files from the destination that do not exist in the source
+# --prune-empty-dirs: Remove empty directories from the destination
+# --exclude: Exclude specific files or directories from the sync
+# Source directory: $HDD_BACKUP_SOURCE_PATH
+# Destination directory: $HDD_BACKUP_TMP_DIR
 if ! rsync \
--artvu \                   # Preserve file attributes, recurse into subdirectories, show progress, update files
---del \                    # Delete files from destination that do not exist in source
---prune-empty-dirs \       # Remove empty directories from destination
-$EXCLUDE_PARAMS \          # Exclude specific files or directories from the sync
-"$HDD_BACKUP_SOURCE_PATH" \          # Source directory
-"$HDD_BACKUP_TMP_DIR"                 # Destination directory
+    -artvu \
+    --del \
+    --prune-empty-dirs \
+    "$EXCLUDE_PARAMS" \
+    "$HDD_BACKUP_SOURCE_PATH" \
+    "$HDD_BACKUP_TMP_DIR"
 then
     error_exit "Rsync command failed."
 fi
