@@ -4,7 +4,7 @@
 
 RSYNC_BACKUP_DESTINATION="."
 RSYNC_BACKUP_MAX_BACKUPS="10"
-RSYNC_BACKUP_PATHS="$@"
+RSYNC_BACKUP_PATHS=("$@")
 DATE=$(date +"%Y%m%d")
 
 function usage()
@@ -98,7 +98,7 @@ if ! command -v rsync &> /dev/null; then
     error_exit "rsync could not be found on system."
 fi
 
-for backup_path in $RSYNC_BACKUP_PATHS; do
+for backup_path in "${RSYNC_BACKUP_PATHS[@]}"; do
 
     info "Rsync backup of path $backup_path starting."
 
@@ -168,7 +168,8 @@ for backup_path in $RSYNC_BACKUP_PATHS; do
 
     # Delete old backups if number of backups exceeds RSYNC_BACKUP_MAX_BACKUPS
     cd "$RSYNC_BACKUP_DESTINATION/" || error_exit
-    backup_dirs=($(ls -td -- */ | grep "$backup_name-backup-"))
+    mapfile -t backup_dirs < <(shopt -s nullglob; for dir in */
+    do [[ $dir =~ $backup_name-backup- ]] && echo "$dir"; done)
     if [ ${#backup_dirs[@]} -gt "$RSYNC_BACKUP_MAX_BACKUPS" ]; then
         info "Number of backups exceeds $RSYNC_BACKUP_MAX_BACKUPS. Deleting old backups."
         for ((i=${#backup_dirs[@]}-1; i>=RSYNC_BACKUP_MAX_BACKUPS; i--)); do
