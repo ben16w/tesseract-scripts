@@ -168,8 +168,12 @@ for backup_path in "${RSYNC_BACKUP_PATHS[@]}"; do
 
     # Delete old backups if number of backups exceeds RSYNC_BACKUP_MAX_BACKUPS
     cd "$RSYNC_BACKUP_DESTINATION/" || error_exit
-    mapfile -t backup_dirs < <(shopt -s nullglob; for dir in */
-    do [[ $dir =~ $backup_name-backup- ]] && echo "$dir"; done)
+    mapfile -t backup_dirs < <(
+        shopt -s nullglob
+        for dir in */; do
+            [[ $dir =~ $backup_name-backup- ]] && echo "$dir"
+        done
+    )
     if [ ${#backup_dirs[@]} -gt "$RSYNC_BACKUP_MAX_BACKUPS" ]; then
         info "Number of backups exceeds $RSYNC_BACKUP_MAX_BACKUPS. Deleting old backups."
         for ((i=${#backup_dirs[@]}-1; i>=RSYNC_BACKUP_MAX_BACKUPS; i--)); do
