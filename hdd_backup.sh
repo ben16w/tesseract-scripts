@@ -151,8 +151,7 @@ if ! HDD_BACKUP_TMP_DIR=$(mktemp -d); then
 fi
 
 if [ -z "$HDD_BACKUP_HDD_UUID" ]; then
-    echo "Destination HDD not found"
-    exit 1
+    error_exit "Destination HDD not found"
 fi
 
 # Check if HDD is already mounted
@@ -187,10 +186,9 @@ fi
 
 # Ask user if they're ready to continue
 if [ "$YES_OPTION" != "true" ]; then
-    read -rp "HDD is mounted for backup. Are you ready to continue? (y/n): " answer
+    read -rp "HDD is mounted at $HDD_BACKUP_TMP_DIR for backup. Ready to continue? (y/n): " answer
     if [[ $answer != "y" && $answer != "Y" ]]; then
-        echo "Backup aborted."
-        exit 0
+        error_exit "Backup aborted."
     fi
 fi
 
@@ -216,4 +214,4 @@ then
     error_exit "Rsync command failed."
 fi
 
-info "Backup finished"
+info "Backup completed!"
