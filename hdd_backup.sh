@@ -12,6 +12,7 @@ HDD_BACKUP_EXCLUDE_DIRS=(
     "Tvshows"
     "Audio"
     "Music"
+    "Games"
 )
 
 function usage()
@@ -20,7 +21,7 @@ function usage()
     echo
     echo "Options:"
     echo "  -h, --help         Show this help message and exit"
-    echo "  -y, --yes          Answer yes to all prompts"  
+    echo "  -y, --yes          Answer yes to all prompts"
     echo
     echo "Arguments:"
     echo "  HDD_UUID           The UUID of the encrypted external hard drive"
@@ -83,7 +84,7 @@ fi
 
 # Check if script is running as root
 if [[ $EUID -ne 0 ]]; then
-    error_exit "Script $0 must be run as root" 
+    error_exit "Script $0 must be run as root"
 fi
 
 # Display usage information if -h or --help option is provided
