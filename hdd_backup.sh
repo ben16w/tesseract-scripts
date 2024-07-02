@@ -16,10 +16,11 @@ HDD_BACKUP_EXCLUDE_DIRS=(
 
 function usage()
 {
-    echo "Usage: $(basename "$0") <HDD_UUID>"
+    echo "Usage: $(basename "$0") [-h|--help] [-y|--yes] <HDD_UUID>"
     echo
     echo "Options:"
     echo "  -h, --help         Show this help message and exit"
+    echo "  -y, --yes          Answer yes to all prompts"  
     echo
     echo "Arguments:"
     echo "  HDD_UUID           The UUID of the encrypted external hard drive"
@@ -99,7 +100,13 @@ function cleanup()
 {
     info "Cleaning up"
 
+    # Ask user to press any key to continue
+    if [ "$YES_OPTION" != "true" ]; then
+        read -n 1 -s -r -p "Press any key to continue..."
+    fi
+
     # Unmount the encrypted volume
+    fuser -km "$HDD_BACKUP_TMP_DIR" # kill processes using the directory
     umount "$HDD_BACKUP_TMP_DIR" || true
 
     # Remove the temporary directory
@@ -109,10 +116,16 @@ function cleanup()
     cryptsetup luksClose "luks-$HDD_BACKUP_HDD_UUID" || true
 }
 
+# Check if yes option is provided
+if [ "$1" == "-y" ] || [ "$1" == "--yes" ]; then
+    YES_OPTION=true
+    shift
+fi
+
 # Build rsync exclude parameters string from array
-EXCLUDE_PARAMS=" "
+EXCLUDE_PARAMS=()
 for dir in "${HDD_BACKUP_EXCLUDE_DIRS[@]}"; do
-    EXCLUDE_PARAMS+="--exclude=\"$dir\" "
+    EXCLUDE_PARAMS+=(--exclude="$dir")
 done
 
 # Need to check that rsync is installed
@@ -171,6 +184,15 @@ if ! mount "/dev/mapper/luks-$HDD_BACKUP_HDD_UUID" "$HDD_BACKUP_TMP_DIR"; then
     error_exit "Mount error"
 fi
 
+# Ask user if they're ready to continue
+if [ "$YES_OPTION" != "true" ]; then
+    read -rp "HDD is mounted for backup. Are you ready to continue? (y/n): " answer
+    if [[ $answer != "y" && $answer != "Y" ]]; then
+        echo "Backup aborted."
+        exit 0
+    fi
+fi
+
 # Use rsync to copy files from the source directory to the temporary directory
 # -a: Preserve file attributes (timestamps, permissions, etc.)
 # -r: Recurse into subdirectories
@@ -186,7 +208,7 @@ if ! rsync \
     -artvu \
     --del \
     --prune-empty-dirs \
-    "$EXCLUDE_PARAMS" \
+    "${EXCLUDE_PARAMS[@]}" \
     "$HDD_BACKUP_SOURCE_PATH" \
     "$HDD_BACKUP_TMP_DIR"
 then
