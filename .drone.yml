@@ -9,9 +9,8 @@ trigger:
     - custom
 
 steps:
-  - name: lint shell
-    image: koalaman/shellcheck-alpine:latest
+  - name: lint
+    image: python:3
     commands:
-      - apk update
-      - apk add bash make
+      - make install-venv
       - make lint

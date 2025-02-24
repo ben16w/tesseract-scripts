@@ -1,21 +1,45 @@
-# tesseract-scripts
+# scripts
 
 This project contains the bash scripts used by the ansible collections tesseract-system, tesseract-app and tesseract-network. These scripts can also be used manually by following the instructions below.
 
 ## Installation
 
-Firstly, clone this repository to your local machine:
+Install the required system packages:
 
-    git clone https://github.com/ben16w/tesseract-scripts.git
+```sh
+sudo apt install make python3 python3-pip python3-venv
+```
 
-Then edit create a file named `.env` in the root of the repository and add the environment variables required by the script. For example:
+Set up the virtual environment and install the required Python packages:
 
-    TESSERACT_SCRIPTS_PATH=/path/to/tesseract-scripts
+```sh
+make install-venv
+```
+
+Lint the scripts:
+
+```sh
+make lint
+```
+
+## Usage
+
+Create a file named `.env` in the root of the repository and add the environment variables required by the script. For example:
+
+```sh
+TESSERACT_SCRIPTS_PATH=/path/to/tesseract-scripts
+```
 
 Finally, run the script reqiured. For example:
 
-    bash ./local_bakcup.sh /home/tesseract
+```sh
+bash ./local_bakcup.sh /home/tesseract
+```
 
 ## License
 
-This project is licensed under the Unlicense - see the LICENSE file for details
+This project is licensed under the Unlicense. See the [LICENSE](LICENSE) file for details.
+
+## Authors
+
+- Ben Wadsworth
