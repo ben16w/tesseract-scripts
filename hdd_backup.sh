@@ -7,6 +7,7 @@ HDD_BACKUP_SOURCE_PATH=/media/storage/
 HDD_BACKUP_HDD_UUID=$1
 HDD_BACKUP_EXCLUDE_DIRS=(
     "snapraid.content"
+    "lost+found"
     "Downloads"
     "Import"
     "Tvshows"
